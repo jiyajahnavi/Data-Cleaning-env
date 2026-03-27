@@ -18,7 +18,7 @@ class DataCleaningEnvClient:
         return response.json()
 
 if __name__ == "__main__":
-    import google.generativeai as genai
+    from google import genai
     
     # Read GEMINI_API_KEY from environment
     api_key = os.getenv("GEMINI_API_KEY")
@@ -26,9 +26,7 @@ if __name__ == "__main__":
         print("Set GEMINI_API_KEY to run the baseline!")
         exit(1)
         
-    genai.configure(api_key=api_key)
-    # Using Gemini 1.5 Flash as a highly capable and fast agent
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    client = genai.Client(api_key=api_key)
     
     env = DataCleaningEnvClient()
 
@@ -42,13 +40,19 @@ if __name__ == "__main__":
         total_reward = 0.0
         
         while not done and step < 10:
+            import time
+            time.sleep(4)  # ⏳ Wait a few seconds to avoid hitting the free tier rate limit
+            
             prompt = f"You are an agent cleaning dataset. Current dataset quality is {obs.quality_score:.2f} (1.0 is perfect).\n\n"
             prompt += "Action space:\n"
             prompt += "- remove_nulls\n- fill_missing\n- remove_duplicates\n- lowercase\n- remove_punctuation\n- remove_stopwords\n- normalize_text\n- no_op\n\n"
             prompt += f"Cleaned Data State:\n{json.dumps(obs.cleaned_data, indent=2)}\n\n"
             prompt += "Select exactly one action name from the Action space list to apply to the dataset. Reply with just the action name and nothing else."
             
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt
+            )
             action_name = response.text.strip().replace("`", "").strip()
             
             print(f"Agent chose: {action_name}")
