@@ -1,0 +1,7 @@
+name: DataCleaningEnv
+description: Environment for cleaning noisy tabular/text data step-by-step.
+version: "0.1.0"
+entrypoint: server/app.py
+port: 8000
+docker:
+  dockerfile: server/Dockerfile

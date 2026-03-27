@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Data Cleaning Env</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        h2,
+        h3 {
+            color: #38bdf8;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 10px;
+        }
+
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background: #1e293b;
+            color: white;
+        }
+
+        button:hover {
+            background: #38bdf8;
+            color: black;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .box {
+            flex: 1;
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 10px;
+            overflow: auto;
+            max-height: 400px;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>🧹 Data Cleaning Environment</h2>
+
+    <h3>Input Data (JSON)</h3>
+    <textarea id="inputData" rows="6">
+[
+  {"id": "1", "text": "HELLO WORLD!!!", "value": ""},
+  {"id": "2", "text": "This is a TEST.", "value": "10"}
+]
+</textarea>
+
+    <button onclick="resetWithInput()">Reset With Input</button>
+
+    <h3>Actions</h3>
+    <button onclick="step('lowercase')">Lowercase</button>
+    <button onclick="step('remove_nulls')">Remove Nulls</button>
+    <button onclick="step('fill_missing')">Fill Missing</button>
+    <button onclick="step('remove_duplicates')">Remove Duplicates</button>
+    <button onclick="step('remove_punctuation')">Remove Punctuation</button>
+    <button onclick="step('remove_stopwords')">Remove Stopwords</button>
+    <button onclick="step('normalize_text')">Normalize</button>
+    <button onclick="step('no_op')">No-op</button>
+
+    <div class="status">
+        <p><b>Reward:</b> <span id="reward">0</span></p>
+        <p><b>Done:</b> <span id="done">false</span></p>
+    </div>
+
+    <div class="container">
+        <div class="box">
+            <h3>Raw Data</h3>
+            <pre id="rawData"></pre>
+        </div>
+
+        <div class="box">
+            <h3>Cleaned Data</h3>
+            <pre id="cleanedData"></pre>
+        </div>
+    </div>
+
+    <div class="box" style="margin-top: 20px;">
+        <h3>State</h3>
+        <pre id="state"></pre>
+    </div>
+
+    <script>
+        const BASE = "http://127.0.0.1:8000";
+
+        async function resetWithInput() {
+            const input = document.getElementById("inputData").value;
+
+            let parsed;
+            try {
+                parsed = JSON.parse(input);
+            } catch (e) {
+                alert("Invalid JSON");
+                return;
+            }
+
+            const res = await fetch(`${BASE}/reset`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(parsed)
+            });
+
+            const data = await res.json();
+
+            updateUI(data);
+            updateState();
+        }
+
+        async function step(actionName) {
+            let action = {
+                remove_nulls: false,
+                fill_missing: false,
+                remove_duplicates: false,
+                lowercase: false,
+                remove_punctuation: false,
+                remove_stopwords: false,
+                normalize_text: false,
+                no_op: false
+            };
+
+            action[actionName] = true;
+
+            const res = await fetch(`${BASE}/step`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(action)
+            });
+
+            const data = await res.json();
+
+            document.getElementById("reward").textContent = data.reward;
+            document.getElementById("done").textContent = data.done;
+
+            updateUI(data.observation);
+            updateState();
+        }
+
+        function updateUI(data) {
+            document.getElementById("rawData").textContent =
+                JSON.stringify(data.raw_data, null, 2);
+
+            document.getElementById("cleanedData").textContent =
+                JSON.stringify(data.cleaned_data, null, 2);
+        }
+
+        async function updateState() {
+            const res = await fetch(`${BASE}/state`);
+            const data = await res.json();
+
+            document.getElementById("state").textContent =
+                JSON.stringify(data, null, 2);
+        }
+    </script>
+
+</body>
+
+</html>
