@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Optional
 import os
 
-from data_cleaning_env.models import Action, Observation
+from data_cleaning_env.models import Action, Observation, ResetConfig
 from data_cleaning_env.server.environment import DataCleaningEnv
 
 app = FastAPI(title="DataCleaningEnv Server")
@@ -24,8 +24,9 @@ def get_ui():
     return FileResponse(ui_path)
 
 @app.post("/reset")
-def reset_environment(data: Optional[List[Dict[str, Any]]] = Body(default=None)):
-    obs = env.reset(data)
+def reset_environment(config: Optional[ResetConfig] = Body(default=None)):
+    task_id = config.task_id if config else "easy"
+    obs = env.reset(task_id=task_id)
     return obs
 
 @app.post("/step")

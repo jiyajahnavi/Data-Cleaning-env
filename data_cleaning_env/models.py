@@ -16,3 +16,6 @@ class Observation(BaseModel):
     cleaned_data: List[Dict[str, Any]]
     quality_score: float
     step_count: int
+
+class ResetConfig(BaseModel):
+    task_id: str = "easy"
